@@ -14,7 +14,7 @@ if (GTEST_FOUND)
 	endif (MSVC11)
 	
 	set(MUL13_TESTS_SOURCES
-		#TODO: add test files
+		TestAC.cpp
 	)
 	
 	add_executable(tests ${MUL13_TESTS_SOURCES})
