@@ -29,7 +29,7 @@ TEST_F(ArithmeticCodingTest, Encoder) {
 		encoder.encode((unsigned)c, dataModel.get());
 	}
 
-	ASSERT_EQ(14, encoder.writtenBits());
+	ASSERT_EQ(14, encoder.bitsWritten());
 
 	EXPECT_EQ(0x58, encoder.data()[0]);
 	EXPECT_EQ(0x3D, encoder.data()[1]);

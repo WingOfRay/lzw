@@ -17,12 +17,13 @@ void ArithmeticEncoder::reset() {
 	counter = 0;
 
 	bitPosInLastByte = 0;
-	bitsWritten = 0;
+	bufferBits = 0;
+	buffer.clear();
 }
 
 void ArithmeticEncoder::writeBit(bool bit) {
 	// inc written bits counter
-	bitsWritten++;
+	bufferBits++;
 
 	// if we are at first bit add new byte
 	if (bitPosInLastByte == 0)
@@ -67,8 +68,9 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 			intervalLow = 2 * intervalLow;
 			intervalHigh = 2 * intervalHigh + 1;
 
-			// send zero to output and number of ones as specified in counter variable
+			// encode first case as zero
 			writeBit(false);
+			// handle third case, we use relation that (C3)^k C1 = C1 (C2)^k
 			for (size_t i = 0; i < counter; ++i)
 				writeBit(true);
 
@@ -80,8 +82,9 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 			intervalLow = 2 * (intervalLow - HALF_INTERVAL);
 			intervalHigh = 2 * (intervalHigh - HALF_INTERVAL) + 1;
 
-			// send one to output and number of zeros as specified in counter variable
+			// encode second case as one
 			writeBit(true);
+			// handle third case, we use relation that (C3)^k C2 = C2 (C1)^k
 			for (size_t i = 0; i < counter; ++i)
 				writeBit(false);
 
@@ -92,6 +95,11 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 			// enlarge interval
 			intervalLow = 2 * (intervalLow - QUATER_INTERVAL);
 			intervalHigh = 2 * (intervalHigh - QUATER_INTERVAL) + 1;
+
+			// this case can't be encoded directly but we can prove that
+			// (C3)^k C1 = C1 (C2)^k and (C3)^k C2 = C2 (C1)^k so we count
+			// third cases in row and than handle them in first and second case using
+			// above formulas
 
 			// increase counter
 			counter++;

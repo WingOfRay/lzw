@@ -59,13 +59,7 @@ public:
 	 * @return number of symbols in data model
 	 */
 	virtual std::size_t size() const {
-		int lastNonNull = -1;
-		for (size_t i = 0; i < cumulativeFreqs.size(); ++i) {
-			if (cumulativeFreqs[i] != 0)
-				lastNonNull = i;
-		}
-
-		return lastNonNull >= 0 ? lastNonNull + 1 : cumulativeFreqs.size();
+		return cumulativeFreqs.size();
 	}
 private:
 	void computeCumulativeFreqs(const std::vector<unsigned>& freqs);
