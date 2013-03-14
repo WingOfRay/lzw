@@ -9,12 +9,19 @@
 
 void StaticDataModel::computeCumulativeFreqs(const std::vector<unsigned>& freqs) {
 	cumulativeFreqs.resize(freqs.size());
-
-	// TODO: handle overflow
-
-	for (int i = 0; i < (int)cumulativeFreqs.size(); ++i) {
-		for (int j = i; j >= 0; --j) {
-			cumulativeFreqs[i] += freqs[j];
+	
+	for (size_t i = 0; i < cumulativeFreqs.size(); ++i) {
+		cumulativeFreqs[i] = i > 0 ? (cumulativeFreqs[i - 1] + freqs[i]) : freqs[i];
+		// handle overflow
+		if (cumulativeFreqs[i] > MAX_FREQ) {
+			// divide all frequencies bigger than 1 by two and compute new cumulative frequencies
+			auto newFreqs = freqs;
+			for (auto& f : newFreqs) {
+				if (f > 1)
+					f /= 2;
+			}
+			computeCumulativeFreqs(newFreqs);
+			break;
 		}
 	}
 }

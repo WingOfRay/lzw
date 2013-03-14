@@ -14,9 +14,30 @@
 #include <cassert>
 #include <cstdint>
 
+/**
+ * Compile time power of two. Implementation using Template meta function.
+ * Because !!STUPID!! Microsoft doesn't support constexpr in MSVC11(most current now)
+ * while gcc and clang supports it in their current versions, we have to
+ * use this template meta function instead constexpr function.
+ */
+template <size_t N>
+struct Pow2
+{
+	enum : size_t { value = 2U * Pow2<N - 1U>::value };
+};
+
+template <>
+struct Pow2<0>
+{
+	enum : size_t { value = 1U };
+};
+
+
 class DataModel
 {
 public:
+	static const uint32_t MAX_FREQ = Pow2<29>::value - 1U;
+
 	~DataModel() {}
 
 	virtual unsigned getCumulativeFreq(unsigned symbol) const = 0;
@@ -61,7 +82,7 @@ public:
 	virtual std::size_t size() const {
 		return cumulativeFreqs.size();
 	}
-private:
+protected:
 	void computeCumulativeFreqs(const std::vector<unsigned>& freqs);
 
 	std::vector<unsigned> cumulativeFreqs;
@@ -71,7 +92,7 @@ private:
  * Adaptive data model.
  * Symbol frequencies are built online.
  */
-class AdaptiveDataModel : public DataModel
+class AdaptiveDataModel : public StaticDataModel
 {
 public:
 	/**
@@ -79,29 +100,12 @@ public:
 	 * Sets all symbol frequencies to 1.
 	 * @param numSymbols number of symbols in frequency table, created by this call
 	 */
-	explicit AdaptiveDataModel(std::size_t numSymbols) : cumulativeFreqs(numSymbols) {
+	explicit AdaptiveDataModel(std::size_t numSymbols) {
+		cumulativeFreqs.resize(numSymbols);
 		reset();
 	}
 
-	/**
-	 * Get cumulative frequency which is g_n = f_1 + f_2 + ... + f_n.
-	 * Cumulative frequencies are precomputed so complexity of this class is constant
-	 * @param symbol symbol position in frequencies table
-	 * @return cumulative frequency for symbol
-	 */
-	virtual unsigned getCumulativeFreq(unsigned symbol) const {
-		assert(symbol < cumulativeFreqs.size());
-
-		return cumulativeFreqs[symbol];
-	}
-
-	/**
-	 * Gets number of symbols in data model
-	 * @return number of symbols in data model
-	 */
-	virtual std::size_t size() const {
-		return cumulativeFreqs.size();
-	}
+	explicit AdaptiveDataModel(const std::vector<unsigned>& freqs) : StaticDataModel(freqs) {}
 
 	/**
 	 * Resets data model to initial state, which is all frequencies to 1.
@@ -118,24 +122,26 @@ public:
 	 * @param freq frequency to add to current symbol frequency, operation +=
 	 */
 	void incSymbolFreq(unsigned symbol, unsigned freq = 1) {
+		bool overflow = false;
 		for (auto i = symbol; i < cumulativeFreqs.size(); ++i) {
 			cumulativeFreqs[i] += freq;
+			// on overflow set overflow flag
+			if (cumulativeFreqs[i] > MAX_FREQ)
+				overflow = true;
+		}
+
+		// handle overflow we could handle it after additions because addition
+		// overflows on 1bit and we have 3bits free
+		if (overflow) {
+			// compute frequencies
+			std::vector<unsigned> freqs(cumulativeFreqs.size());
+			for (size_t i = 0; i < freqs.size(); ++i)
+				freqs[i] = cumulativeFreqs[i] - ( i > 0 ? cumulativeFreqs[i - 1] : 0);
+
+			// compute new cumulative freqs, overflow will be handled here
+			computeCumulativeFreqs(freqs);
 		}
 	}
-private:
-	std::vector<unsigned> cumulativeFreqs;
-};
-
-template <size_t N>
-struct Pow2
-{
-	enum : size_t { value = 2U * Pow2<N - 1U>::value };
-};
-
-template <>
-struct Pow2<0>
-{
-	enum : size_t { value = 1U };
 };
 
 template <size_t N>

@@ -16,6 +16,7 @@ protected:
 		}
 
 		dataModel.reset(new StaticDataModel(freq));
+		//dataModel.reset(new AdaptiveDataModel(128));
 	}
 
 	std::string testStr;
