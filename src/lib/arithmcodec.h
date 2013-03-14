@@ -138,14 +138,47 @@ struct Pow2<0>
 	enum : size_t { value = 1U };
 };
 
-class ArithmeticCodec
+template <size_t N>
+struct TypeWithSize
 {
-protected:
-	static const size_t INTERVAL_BITS = 31;
-	static const uint32_t MAX_INTERVAL = Pow2<INTERVAL_BITS>::value - 1U;
-	static const uint32_t QUATER_INTERVAL = (MAX_INTERVAL + 1U) / 4U;
-	static const uint32_t HALF_INTERVAL = 2*QUATER_INTERVAL;
-	static const uint32_t THREE_QUATERS_INTERVAL = 3*QUATER_INTERVAL;
+	typedef void Uint;
+	typedef void Int;
+};
+
+template <>
+struct TypeWithSize<4>
+{
+	typedef uint32_t Uint;
+	typedef int32_t Int;
+};
+
+template <>
+struct TypeWithSize<8>
+{
+	typedef uint64_t Uint;
+	typedef int64_t Int;
+};
+
+/**
+ * Traits for interval used in arithmetic coding
+ * @param N precision in bytes we want for our interval
+ */
+template <size_t N>
+class IntervalTraits
+{
+public:
+	typedef typename TypeWithSize<N>::Uint ValueType;
+
+	/// Number of bits we use. -1 is because without it overflow could occur
+	static const size_t BITS = N * CHAR_BIT - 1;
+	/// Max interval value
+	static const ValueType MAX = Pow2<BITS>::value - 1U;
+	/// Quarter of maximum interval value
+	static const ValueType QUARTER = (MAX + 1U) / 4U;
+	/// Half of maximum interval value
+	static const ValueType HALF = 2*QUARTER;
+	/// Three quarters of maximum interval value
+	static const ValueType THREE_QUARTERS = 3*QUARTER;
 };
 
 #endif // !ARITHMCODEC_H

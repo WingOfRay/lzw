@@ -17,7 +17,7 @@
  * symbols and allows it to handle theoretically infinite input sequences
  * @see http://phoenix.inf.upol.cz/esf/ucebni/komprese.pdf
  */
-class ArithmeticEncoder : public ArithmeticCodec
+class ArithmeticEncoder
 {
 public:
 	/// Ctor
@@ -56,6 +56,9 @@ public:
 		return buffer.data();
 	}
 private:
+	typedef IntervalTraits<sizeof(uint32_t)> IntervalTraitsType;
+	typedef IntervalTraitsType::ValueType IntervalValueType;
+
 	/**
 	 * Append bit to data buffer.
 	 * @param bit value to append
@@ -66,8 +69,8 @@ private:
 	unsigned char bitPosInLastByte;		/// bit position in last data buffer byte
 	std::size_t bufferBits;				/// number of bits in data buffer
 
-	std::uint32_t intervalLow;			/// lower interval bound
-	std::uint32_t intervalHigh;			/// upper interval bound
+	IntervalValueType intervalLow;			/// lower interval bound
+	IntervalValueType intervalHigh;			/// upper interval bound
 	/// counter that counts how many times in row was interval enlarged from
 	/// middle possible range
 	std::size_t counter;

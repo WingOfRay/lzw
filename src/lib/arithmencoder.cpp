@@ -13,7 +13,7 @@ ArithmeticEncoder::ArithmeticEncoder() {
 
 void ArithmeticEncoder::reset() {
 	intervalLow = 0;
-	intervalHigh = MAX_INTERVAL;
+	intervalHigh = IntervalTraitsType::MAX;
 	counter = 0;
 
 	bitPosInLastByte = 0;
@@ -63,7 +63,7 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 	// loop ends when interval is large enough
 	for (;;) {
 		// interval is in lower half of possible range
-		if (intervalHigh < HALF_INTERVAL) {
+		if (intervalHigh < IntervalTraitsType::HALF) {
 			// enlarge interval
 			intervalLow = 2 * intervalLow;
 			intervalHigh = 2 * intervalHigh + 1;
@@ -77,10 +77,10 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 			counter = 0;				// reset counter
 
 		// interval is in upper half of possible range
-		} else if (intervalLow >= HALF_INTERVAL) {
+		} else if (intervalLow >= IntervalTraitsType::HALF) {
 			// enlarge interval
-			intervalLow = 2 * (intervalLow - HALF_INTERVAL);
-			intervalHigh = 2 * (intervalHigh - HALF_INTERVAL) + 1;
+			intervalLow = 2 * (intervalLow - IntervalTraitsType::HALF);
+			intervalHigh = 2 * (intervalHigh - IntervalTraitsType::HALF) + 1;
 
 			// encode second case as one
 			writeBit(true);
@@ -91,10 +91,10 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 			counter = 0;				// reset counter
 
 		// interval is in middle of possible range
-		} else if (intervalLow >= QUATER_INTERVAL && intervalHigh < THREE_QUATERS_INTERVAL) {
+		} else if (intervalLow >= IntervalTraitsType::QUARTER && intervalHigh < IntervalTraitsType::THREE_QUARTERS) {
 			// enlarge interval
-			intervalLow = 2 * (intervalLow - QUATER_INTERVAL);
-			intervalHigh = 2 * (intervalHigh - QUATER_INTERVAL) + 1;
+			intervalLow = 2 * (intervalLow - IntervalTraitsType::QUARTER);
+			intervalHigh = 2 * (intervalHigh - IntervalTraitsType::QUARTER) + 1;
 
 			// this case can't be encoded directly but we can prove that
 			// (C3)^k C1 = C1 (C2)^k and (C3)^k C2 = C2 (C1)^k so we count
