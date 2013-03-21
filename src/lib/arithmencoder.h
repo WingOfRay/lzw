@@ -31,6 +31,11 @@ public:
 	void reset();
 
 	/**
+	 * Finishes encoding, writing last necessary bits.
+	 */
+	void close();
+
+	/**
 	 * Encodes given symbol with data model.
 	 * Result will be stored to data buffer accessible with {@link data} method,
 	 * also {@link writtenBits} counter will be increased by number of bits
@@ -59,6 +64,8 @@ private:
 	typedef IntervalTraits<sizeof(uint32_t)> IntervalTraitsType;
 	typedef IntervalTraitsType::ValueType IntervalValueType;
 
+	void encodeIntervalChange(bool flag);
+
 	/**
 	 * Append bit to data buffer.
 	 * @param bit value to append
@@ -69,8 +76,8 @@ private:
 	unsigned char bitPosInLastByte;		/// bit position in last data buffer byte
 	std::size_t bufferBits;				/// number of bits in data buffer
 
-	IntervalValueType intervalLow;			/// lower interval bound
-	IntervalValueType intervalHigh;			/// upper interval bound
+	uint64_t intervalLow;			/// lower interval bound
+	uint64_t intervalHigh;			/// upper interval bound
 	/// counter that counts how many times in row was interval enlarged from
 	/// middle possible range
 	std::size_t counter;

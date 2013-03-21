@@ -4,34 +4,32 @@
 #include <limits>
 
 #include "arithmencoder.h"
+#include "arithmdecoder.h"
 
 class ArithmeticCodingTest : public ::testing::Test
 {
 protected:
 	virtual void SetUp() {
-		testStr = "ahojky";
-		std::vector<unsigned> freq(128);
-		for (auto c : testStr) {
-			freq[c]++;
-		}
-
-		dataModel.reset(new StaticDataModel(freq));
-		//dataModel.reset(new AdaptiveDataModel(128));
 	}
-
-	std::string testStr;
-	std::unique_ptr<DataModel> dataModel;
 };
 
-TEST_F(ArithmeticCodingTest, Encoder) {
-	ArithmeticEncoder encoder;
+TEST_F(ArithmeticCodingTest, StaticModel) {
+	std::string testStr = "ahojky mam nove kalhoty a nic to neznamena tohle je jen testovaci retezec";
+	std::vector<unsigned> freq(128);
+	for (auto c : testStr) {
+		freq[c]++;
+	}
+	std::unique_ptr<DataModel> dataModel(new StaticDataModel(freq));
 
+	ArithmeticEncoder encoder;
 	for (auto c : testStr) {
 		encoder.encode((unsigned)c, dataModel.get());
 	}
+	encoder.close();
 
-	ASSERT_EQ(14, encoder.bitsWritten());
+	ArithmeticDecoder decoder(encoder.data(), encoder.bitsWritten());
+	for (auto c : testStr) {
+		EXPECT_EQ(c, decoder.decode(dataModel.get()));
+	}
 
-	EXPECT_EQ(0x58, encoder.data()[0]);
-	EXPECT_EQ(0x3D, encoder.data()[1]);
 }

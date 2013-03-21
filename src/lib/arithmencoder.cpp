@@ -21,6 +21,15 @@ void ArithmeticEncoder::reset() {
 	buffer.clear();
 }
 
+void ArithmeticEncoder::close() {
+	counter++;
+	if (intervalLow < IntervalTraitsType::QUARTER) {
+		encodeIntervalChange(false);
+	} else {
+		encodeIntervalChange(true);
+	}
+}
+
 void ArithmeticEncoder::writeBit(bool bit) {
 	// inc written bits counter
 	bufferBits++;
@@ -30,10 +39,11 @@ void ArithmeticEncoder::writeBit(bool bit) {
 		buffer.push_back(0);
 
 	// set or clear desired bit in last buffer byte
-	if (bit)
-		buffer.back() |= 1 << bitPosInLastByte;
-	else
-		buffer.back() &= ~(1 << bitPosInLastByte);
+	if (bit) {
+		buffer.back() |= 1U << bitPosInLastByte;
+	} else {
+		buffer.back() &= ~(1U << bitPosInLastByte);
+	}
 
 	// inc bitPos if we overflow number of bits in byte
 	bitPosInLastByte++;
@@ -41,60 +51,49 @@ void ArithmeticEncoder::writeBit(bool bit) {
 		bitPosInLastByte = 0;			// zero bitPos
 }
 
-void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
-	// on adaptive data model we increase symbol frequency
-	auto adaptiveModel = dynamic_cast<AdaptiveDataModel*>(dataModel);
-	if (adaptiveModel != nullptr)
-		adaptiveModel->incSymbolFreq(symbol);
+void ArithmeticEncoder::encodeIntervalChange(bool flag) {
+	writeBit(flag);
+	// handle third case, we use relation that (C3)^k C1 = C1 (C2)^k
+	for (; counter > 0; --counter)
+		writeBit(!flag);
+}
 
+void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 	// compute helper value
-	int s = (intervalHigh - intervalLow + 1) / dataModel->getCumulativeFreq(dataModel->size() - 1);
+	auto range = intervalHigh - intervalLow + 1;
+	auto scale = dataModel->getCumulativeFreq(dataModel->size() - 1);
+
+	// interval upper bound is computed as low + s * cumFreq(i) - 1
+	intervalHigh = intervalLow + (range * dataModel->getCumulativeFreq(symbol)) / scale - 1;
 
 	// interval lower bound is computed as low + s * cumFreq(i-1) and cumFreq(-1) == 0 so
 	// if symbol == 0 then interval lower bound is not modified 
 	if (symbol != 0) {
-		intervalLow += s * dataModel->getCumulativeFreq(symbol - 1);
+		intervalLow += (range * dataModel->getCumulativeFreq(symbol - 1)) / scale;
 	}
-
-	// interval upper bound is computed as low + s * cumFreq(i) - 1
-	intervalHigh = intervalLow + s * dataModel->getCumulativeFreq(symbol) - 1;
 
 	// enlarge interval and send info about it to output
 	// loop ends when interval is large enough
 	for (;;) {
 		// interval is in lower half of possible range
 		if (intervalHigh < IntervalTraitsType::HALF) {
-			// enlarge interval
-			intervalLow = 2 * intervalLow;
-			intervalHigh = 2 * intervalHigh + 1;
-
 			// encode first case as zero
-			writeBit(false);
-			// handle third case, we use relation that (C3)^k C1 = C1 (C2)^k
-			for (size_t i = 0; i < counter; ++i)
-				writeBit(true);
-
-			counter = 0;				// reset counter
+			encodeIntervalChange(false);
 
 		// interval is in upper half of possible range
 		} else if (intervalLow >= IntervalTraitsType::HALF) {
 			// enlarge interval
-			intervalLow = 2 * (intervalLow - IntervalTraitsType::HALF);
-			intervalHigh = 2 * (intervalHigh - IntervalTraitsType::HALF) + 1;
+			intervalLow -= IntervalTraitsType::HALF;
+			intervalHigh -= IntervalTraitsType::HALF;
 
 			// encode second case as one
-			writeBit(true);
-			// handle third case, we use relation that (C3)^k C2 = C2 (C1)^k
-			for (size_t i = 0; i < counter; ++i)
-				writeBit(false);
-
-			counter = 0;				// reset counter
+			encodeIntervalChange(true);
 
 		// interval is in middle of possible range
 		} else if (intervalLow >= IntervalTraitsType::QUARTER && intervalHigh < IntervalTraitsType::THREE_QUARTERS) {
 			// enlarge interval
-			intervalLow = 2 * (intervalLow - IntervalTraitsType::QUARTER);
-			intervalHigh = 2 * (intervalHigh - IntervalTraitsType::QUARTER) + 1;
+			intervalLow -= IntervalTraitsType::QUARTER;
+			intervalHigh -= IntervalTraitsType::QUARTER;
 
 			// this case can't be encoded directly but we can prove that
 			// (C3)^k C1 = C1 (C2)^k and (C3)^k C2 = C2 (C1)^k so we count
@@ -107,5 +106,46 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 		// none of these cases so break loop
 		} else
 			break;
+
+		intervalLow <<= 1;
+		intervalHigh = (intervalHigh << 1) + 1;
 	}
+
+	//auto scale = dataModel->getCumulativeFreq(dataModel->size() - 1);
+	//auto range = (intervalHigh - intervalLow + 1) / scale;
+	//intervalHigh = intervalLow + (range * dataModel->getCumulativeFreq(symbol)) - 1;
+	//if (symbol != 0)
+	//	intervalLow = intervalLow + range * dataModel->getCumulativeFreq(symbol - 1);
+	//
+	//for (;;) {
+	//	bool lowMsb = getBit(intervalLow, IntervalTraitsType::BITS);
+	//	bool highMsb = getBit(intervalHigh, IntervalTraitsType::BITS);
+	//	// compare high and low msb
+	//	if (lowMsb == highMsb) {
+	//		writeBit(lowMsb);
+	//		for (size_t i = 0; i < counter; ++i)
+	//			writeBit(!lowMsb);
+	//		counter = 0;
+
+	//		intervalLow <<= 1;
+	//		intervalHigh = (intervalHigh << 1) + 1;
+	//	} else {
+	//		bool secondLowMsb = getBit(intervalLow, IntervalTraitsType::BITS - 1);
+	//		bool secondHighMsb = getBit(intervalHigh, IntervalTraitsType::BITS - 1);
+	//		if (secondLowMsb && !secondHighMsb) {
+	//			counter++;
+	//			intervalHigh |= IntervalTraitsType::QUARTER;
+	//			intervalLow &= IntervalTraitsType::QUARTER - 1;
+
+	//			intervalLow <<= 1;
+	//			intervalHigh = (intervalHigh << 1) + 1;
+	//		} else
+	//			break;
+	//	}
+	//}
+
+	// on adaptive data model we increase symbol frequency
+	auto adaptiveModel = dynamic_cast<AdaptiveDataModel*>(dataModel);
+	if (adaptiveModel != nullptr)
+		adaptiveModel->incSymbolFreq(symbol);
 }

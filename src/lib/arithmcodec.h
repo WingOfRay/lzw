@@ -165,6 +165,10 @@ struct TypeWithSize<8>
 	typedef int64_t Int;
 };
 
+inline bool getBit(unsigned value, size_t n) {
+	return !!(value & (1U << n));
+}
+
 /**
  * Traits for interval used in arithmetic coding
  * @param N precision in bytes we want for our interval
@@ -176,11 +180,11 @@ public:
 	typedef typename TypeWithSize<N>::Uint ValueType;
 
 	/// Number of bits we use. -1 is because without it overflow could occur
-	static const size_t BITS = N * CHAR_BIT - 1;
+	static const size_t BITS = N * CHAR_BIT - 5;
 	/// Max interval value
-	static const ValueType MAX = Pow2<BITS>::value - 1U;
+	static const ValueType MAX = (1U << BITS) - 1U;
 	/// Quarter of maximum interval value
-	static const ValueType QUARTER = (MAX + 1U) / 4U;
+	static const ValueType QUARTER = MAX / 4U + 1;
 	/// Half of maximum interval value
 	static const ValueType HALF = 2*QUARTER;
 	/// Three quarters of maximum interval value
