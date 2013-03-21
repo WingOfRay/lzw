@@ -63,10 +63,10 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 	auto range = intervalHigh - intervalLow + 1;
 	auto scale = dataModel->getCumulativeFreq(dataModel->size() - 1);
 
-	// interval upper bound is computed as low + s * cumFreq(i) - 1
+	// interval upper bound
 	intervalHigh = intervalLow + (range * dataModel->getCumulativeFreq(symbol)) / scale - 1;
 
-	// interval lower bound is computed as low + s * cumFreq(i-1) and cumFreq(-1) == 0 so
+	// interval lower bound is computed as low + (r * cumFreq(i-1)) / s and cumFreq(-1) == 0 so
 	// if symbol == 0 then interval lower bound is not modified 
 	if (symbol != 0) {
 		intervalLow += (range * dataModel->getCumulativeFreq(symbol - 1)) / scale;
@@ -110,39 +110,6 @@ void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {
 		intervalLow <<= 1;
 		intervalHigh = (intervalHigh << 1) + 1;
 	}
-
-	//auto scale = dataModel->getCumulativeFreq(dataModel->size() - 1);
-	//auto range = (intervalHigh - intervalLow + 1) / scale;
-	//intervalHigh = intervalLow + (range * dataModel->getCumulativeFreq(symbol)) - 1;
-	//if (symbol != 0)
-	//	intervalLow = intervalLow + range * dataModel->getCumulativeFreq(symbol - 1);
-	//
-	//for (;;) {
-	//	bool lowMsb = getBit(intervalLow, IntervalTraitsType::BITS);
-	//	bool highMsb = getBit(intervalHigh, IntervalTraitsType::BITS);
-	//	// compare high and low msb
-	//	if (lowMsb == highMsb) {
-	//		writeBit(lowMsb);
-	//		for (size_t i = 0; i < counter; ++i)
-	//			writeBit(!lowMsb);
-	//		counter = 0;
-
-	//		intervalLow <<= 1;
-	//		intervalHigh = (intervalHigh << 1) + 1;
-	//	} else {
-	//		bool secondLowMsb = getBit(intervalLow, IntervalTraitsType::BITS - 1);
-	//		bool secondHighMsb = getBit(intervalHigh, IntervalTraitsType::BITS - 1);
-	//		if (secondLowMsb && !secondHighMsb) {
-	//			counter++;
-	//			intervalHigh |= IntervalTraitsType::QUARTER;
-	//			intervalLow &= IntervalTraitsType::QUARTER - 1;
-
-	//			intervalLow <<= 1;
-	//			intervalHigh = (intervalHigh << 1) + 1;
-	//		} else
-	//			break;
-	//	}
-	//}
 
 	// on adaptive data model we increase symbol frequency
 	auto adaptiveModel = dynamic_cast<AdaptiveDataModel*>(dataModel);

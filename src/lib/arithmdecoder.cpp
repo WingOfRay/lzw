@@ -56,10 +56,10 @@ unsigned ArithmeticDecoder::decode(DataModel* dataModel) {
 
 	// compute new interval bounds
 
-	// interval upper bound is computed as low + s * cumFreq(i) - 1
+	// interval upper bound is
 	intervalHigh = intervalLow + (range * dataModel->getCumulativeFreq(symbol)) / scale - 1;
 
-	// interval lower bound is computed as low + s * cumFreq(i-1) and cumFreq(-1) == 0 so
+	// interval lower bound is computed as low + (r * cumFreq(i-1)) / s and cumFreq(-1) == 0 so
 	// if symbol == 0 then interval lower bound is not modified 
 	if (symbol != 0) {
 		intervalLow += (range * dataModel->getCumulativeFreq(symbol - 1)) / scale;
@@ -89,52 +89,6 @@ unsigned ArithmeticDecoder::decode(DataModel* dataModel) {
 		intervalHigh = (intervalHigh << 1) + 1;
 		readBit();
 	}
-
-	//auto scale = dataModel->getCumulativeFreq(dataModel->size() - 1);
-	//auto range = (intervalHigh - intervalLow + 1) / scale;
-	//auto cumulativeFreq = (uint64_t(value - intervalLow + 1) * scale - 1) / uint64_t(intervalHigh - intervalLow + 1);
-
-	//unsigned symbol = 0;
-	//// find i where cumuliveFreqs[i-1] < cumulativeFreq < cumulativeFreqs[i]
-	//for (size_t i = 0; i < dataModel->size(); ++i) {
-	//	auto lowerBound = i != 0 ? dataModel->getCumulativeFreq(i - 1) : 0U;
-	//	auto upperBound = dataModel->getCumulativeFreq(i);
-	//	if (lowerBound <= cumulativeFreq && cumulativeFreq < upperBound) {
-	//		symbol = i;
-	//		break;
-	//	}
-	//}
-
-	//intervalHigh = intervalLow + (range * dataModel->getCumulativeFreq(symbol)) - 1;
-	//if (symbol != 0)
-	//	intervalLow = intervalLow + range * dataModel->getCumulativeFreq(symbol - 1);
-
-	//for (;;) {
-	//	bool lowMsb = getBit(intervalLow, IntervalTraitsType::BITS);
-	//	bool highMsb = getBit(intervalHigh, IntervalTraitsType::BITS);
-	//	// compare high and low msb
-	//	if (lowMsb == highMsb) {
-	//		intervalLow <<= 1;
-	//		intervalHigh = (intervalHigh << 1) | 1;
-	//		value <<= 1;
-	//		readBit();
-	//	} else {
-	//		bool secondLowMsb = getBit(intervalLow, IntervalTraitsType::BITS - 1);
-	//		bool secondHighMsb = getBit(intervalHigh, IntervalTraitsType::BITS - 1);
-	//		if (secondLowMsb && !secondHighMsb) {
-	//			value ^= IntervalTraitsType::QUARTER;
-	//			intervalHigh |= IntervalTraitsType::QUARTER;
-	//			intervalLow &= IntervalTraitsType::QUARTER - 1;
-
-	//			intervalLow <<= 1;
-	//			intervalHigh = (intervalHigh << 1) | 1;
-	//			value <<= 1;
-	//			readBit();
-	//		} else
-	//			break;
-	//	}
-	//}
-
 
 	// on adaptive data model we increase symbol frequency
 	auto adaptiveModel = dynamic_cast<AdaptiveDataModel*>(dataModel);

@@ -62,7 +62,6 @@ public:
 	}
 private:
 	typedef IntervalTraits<sizeof(uint32_t)> IntervalTraitsType;
-	typedef IntervalTraitsType::ValueType IntervalValueType;
 
 	void encodeIntervalChange(bool flag);
 

@@ -20,7 +20,6 @@ public:
 	unsigned decode(DataModel* dataModel);
 private:
 	typedef IntervalTraits<sizeof(uint32_t)> IntervalTraitsType;
-	typedef IntervalTraitsType::ValueType IntervalValueType;
 
 	class BitIterator
 	{

@@ -14,29 +14,10 @@
 #include <cassert>
 #include <cstdint>
 
-/**
- * Compile time power of two. Implementation using Template meta function.
- * Because !!STUPID!! Microsoft doesn't support constexpr in MSVC11(most current now)
- * while gcc and clang supports it in their current versions, we have to
- * use this template meta function instead constexpr function.
- */
-template <size_t N>
-struct Pow2
-{
-	enum : size_t { value = 2U * Pow2<N - 1U>::value };
-};
-
-template <>
-struct Pow2<0>
-{
-	enum : size_t { value = 1U };
-};
-
-
 class DataModel
 {
 public:
-	static const uint32_t MAX_FREQ = Pow2<29>::value - 1U;
+	static const uint32_t MAX_FREQ = (1U << 29) - 1U;
 
 	~DataModel() {}
 
@@ -180,7 +161,7 @@ public:
 	typedef typename TypeWithSize<N>::Uint ValueType;
 
 	/// Number of bits we use. -1 is because without it overflow could occur
-	static const size_t BITS = N * CHAR_BIT - 5;
+	static const size_t BITS = N * CHAR_BIT - 1;
 	/// Max interval value
 	static const ValueType MAX = (1U << BITS) - 1U;
 	/// Quarter of maximum interval value
