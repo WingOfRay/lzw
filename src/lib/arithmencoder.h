@@ -9,25 +9,25 @@
 #define ARITHMENCODER_H
 
 #include "arithmcodec.h"
+#include "bitstream.h"
+
+#include <memory>
 
 /**
  * Encoder for arithmetic coding.
  * 32bit integer implementation.
- * Encoder uses internal dynamic array buffer, where it stores encoded
- * symbols and allows it to handle theoretically infinite input sequences
  * @see http://phoenix.inf.upol.cz/esf/ucebni/komprese.pdf
  */
 class ArithmeticEncoder
 {
 public:
 	/// Ctor
-	ArithmeticEncoder();
+	explicit ArithmeticEncoder(std::shared_ptr<BitStreamWriter>& bsw);
 
-	/**
-	 * Resets encoder so you can start encoding new sequence.
-	 * Encoder will store new encoding symbols to beginning of data buffer
-	 * and writtenBits counter will be reset
-	 */
+	~ArithmeticEncoder() {
+		close();
+	}
+
 	void reset();
 
 	/**
@@ -45,35 +45,15 @@ public:
 	 */
 	void encode(unsigned symbol, DataModel* dataModel);
 
-	/**
-	 * Returns number of bits in data buffer
-	 * @return number of bits written to data buffer
-	 */
-	std::size_t bitsWritten() const {
-		return bufferBits;
-	}
-
-	/**
-	 * Returns data buffer.
-	 * @return pointer to first byte of data buffer
-	 */
-	const char* data() const {
-		return buffer.data();
+	std::shared_ptr<BitStreamWriter> writer() {
+		return bitStreamWriter;
 	}
 private:
 	typedef IntervalTraits<sizeof(uint32_t)> IntervalTraitsType;
 
 	void encodeIntervalChange(bool flag);
 
-	/**
-	 * Append bit to data buffer.
-	 * @param bit value to append
-	 */
-	void writeBit(bool bit);
-
-	std::vector<char> buffer;			/// data buffer
-	unsigned char bitPosInLastByte;		/// bit position in last data buffer byte
-	std::size_t bufferBits;				/// number of bits in data buffer
+	std::shared_ptr<BitStreamWriter> bitStreamWriter;
 
 	uint64_t intervalLow;			/// lower interval bound
 	uint64_t intervalHigh;			/// upper interval bound

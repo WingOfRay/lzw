@@ -7,19 +7,8 @@
 
 #include "arithmencoder.h"
 
-ArithmeticEncoder::ArithmeticEncoder() {
-	reset();
-}
-
-void ArithmeticEncoder::reset() {
-	intervalLow = 0;
-	intervalHigh = IntervalTraitsType::MAX;
-	counter = 0;
-
-	bitPosInLastByte = 0;
-	bufferBits = 0;
-	buffer.clear();
-}
+ArithmeticEncoder::ArithmeticEncoder(std::shared_ptr<BitStreamWriter>& bsw) : bitStreamWriter(bsw), 
+	intervalLow(0), intervalHigh(IntervalTraitsType::MAX), counter(0) { }
 
 void ArithmeticEncoder::close() {
 	counter++;
@@ -28,34 +17,23 @@ void ArithmeticEncoder::close() {
 	} else {
 		encodeIntervalChange(true);
 	}
+
+	bitStreamWriter->flush();
 }
 
-void ArithmeticEncoder::writeBit(bool bit) {
-	// inc written bits counter
-	bufferBits++;
+void ArithmeticEncoder::reset() {
+	close();
 
-	// if we are at first bit add new byte
-	if (bitPosInLastByte == 0)
-		buffer.push_back(0);
-
-	// set or clear desired bit in last buffer byte
-	if (bit) {
-		buffer.back() |= 1U << bitPosInLastByte;
-	} else {
-		buffer.back() &= ~(1U << bitPosInLastByte);
-	}
-
-	// inc bitPos if we overflow number of bits in byte
-	bitPosInLastByte++;
-	if (bitPosInLastByte >= CHAR_BIT)
-		bitPosInLastByte = 0;			// zero bitPos
+	intervalLow = 0;
+	intervalHigh = IntervalTraitsType::MAX;
+	counter = 0;
 }
 
 void ArithmeticEncoder::encodeIntervalChange(bool flag) {
-	writeBit(flag);
+	bitStreamWriter->writeBit(flag);
 	// handle third case, we use relation that (C3)^k C1 = C1 (C2)^k
 	for (; counter > 0; --counter)
-		writeBit(!flag);
+		bitStreamWriter->writeBit(!flag);
 }
 
 void ArithmeticEncoder::encode(unsigned symbol, DataModel* dataModel) {

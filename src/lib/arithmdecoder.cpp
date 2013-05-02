@@ -7,20 +7,18 @@
 
 #include "arithmdecoder.h"
 
-ArithmeticDecoder::ArithmeticDecoder(const char* data, size_t numBits) {
-	reset(data, numBits);
+ArithmeticDecoder::ArithmeticDecoder(std::shared_ptr<BitStreamReader>& bsr) : bitStreamReader(bsr),
+	intervalLow(0), intervalHigh(IntervalTraitsType::MAX)  {
+		
+	// read first IntervalTraitsType::BITS from data to value
+	value = 0;
+	for (size_t i = 0; i < IntervalTraitsType::BITS; ++i)
+		readBit();
 }
 
-void ArithmeticDecoder::reset(const char* data, size_t numBits) {
-	this->data = data;
-	this->numBits = numBits;
-
+void ArithmeticDecoder::reset() {
 	intervalLow = 0;
 	intervalHigh = IntervalTraitsType::MAX;
-
-	// construct data end iterator
-	dataEnd = BitIterator(data + numBits / CHAR_BIT, numBits % CHAR_BIT);
-	dataIter = BitIterator(data, 0);
 
 	// read first IntervalTraitsType::BITS from data to value
 	value = 0;
@@ -29,9 +27,12 @@ void ArithmeticDecoder::reset(const char* data, size_t numBits) {
 }
 
 void ArithmeticDecoder::readBit() {
-	bool bit = false;			// on data end we append zero bit
-	if (dataIter != dataEnd)
-		bit = *dataIter++;
+	bool bit;
+	try {
+		bit = bitStreamReader->readBit();
+	} catch (std::exception&) {
+		bit = false;		// on data end we append zero bit
+	}
 
 	value <<= 1;
 	if (bit)

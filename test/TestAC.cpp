@@ -1,35 +1,40 @@
 #include <gtest/gtest.h>
 
-#include <memory>
-#include <limits>
-
-#include "arithmencoder.h"
 #include "arithmdecoder.h"
+#include "arithmencoder.h"
 
-class ArithmeticCodingTest : public ::testing::Test
+#include <sstream>
+#include <vector>
+
+class TestAC : public ::testing::Test
 {
 protected:
-	virtual void SetUp() {
+	void SetUp() {
+		static int data[] = { 0, 2, 3, 1, 3, 1, 0, 2, 0, 1, 1, 3, 0, 2, 1, 3, 1, 3, 3, 2, 0 };
+		simpleData.assign(data, data + sizeof(data) / sizeof(*data));
 	}
+
+	std::vector<int> simpleData;
 };
 
-TEST_F(ArithmeticCodingTest, StaticModel) {
-	std::string testStr = "ahojky mam nove kalhoty a nic to neznamena tohle je jen testovaci retezec";
-	std::vector<unsigned> freq(128);
-	for (auto c : testStr) {
-		freq[c]++;
-	}
-	std::unique_ptr<DataModel> dataModel(new StaticDataModel(freq));
+TEST_F(TestAC, DynamicDataModel) {
+	std::ostringstream os;
 
-	ArithmeticEncoder encoder;
-	for (auto c : testStr) {
-		encoder.encode((unsigned)c, dataModel.get());
-	}
-	encoder.close();
+	AdaptiveDataModel dataModel(4);
 
-	ArithmeticDecoder decoder(encoder.data(), encoder.bitsWritten());
-	for (auto c : testStr) {
-		EXPECT_EQ(c, decoder.decode(dataModel.get()));
+	auto ae = ArithmeticEncoder(std::make_shared<BitStreamWriter>(&os));
+	for (auto val : simpleData) {
+		ae.encode(val, &dataModel);
 	}
+	ae.reset();
+	dataModel.reset();
 
+	auto encoded = os.str();
+
+	std::istringstream is(encoded);
+	auto ad = ArithmeticDecoder(std::make_shared<BitStreamReader>(&is));
+	for (size_t i = 0; i < simpleData.size(); ++i) {
+		auto decoded = ad.decode(&dataModel);
+		EXPECT_EQ(simpleData[i], decoded);
+	}
 }

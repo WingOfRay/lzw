@@ -6,6 +6,7 @@ set(MUL13_LIB_HEADERS
 	arithmcodec.h
 	arithmencoder.h
 	arithmdecoder.h
+	bitstream.h
 )
 
 set(MUL13_LIB_SOURCES
