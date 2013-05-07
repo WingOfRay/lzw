@@ -7,12 +7,16 @@ set(MUL13_LIB_HEADERS
 	arithmencoder.h
 	arithmdecoder.h
 	bitstream.h
+	lzwencoder.h
+	lzwdecoder.h
 )
 
 set(MUL13_LIB_SOURCES
 	arithmcodec.cpp
 	arithmencoder.cpp
 	arithmdecoder.cpp
+	lzwencoder.cpp
+	lzwdecoder.cpp
 )
 
 add_library(mul13 ${MUL13_LIB_HEADERS} ${MUL13_LIB_SOURCES})

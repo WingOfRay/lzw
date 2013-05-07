@@ -15,6 +15,7 @@ if (GTEST_FOUND)
 	
 	set(MUL13_TESTS_SOURCES
 		TestAC.cpp
+		TestLzw.cpp
 	)
 	
 	add_executable(tests ${MUL13_TESTS_SOURCES})

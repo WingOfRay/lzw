@@ -20,7 +20,8 @@ class BitStreamReader
 public:
 	/**
 	 * Constructs new reader from stream.
-	 * @param stream stl istream
+	 * @param stream pointer to stl istream, its caller responsibility 
+	 *        that object is not destroyed while this instance is alive
 	 */
 	explicit BitStreamReader(std::istream* stream) {
 		reset(stream);
@@ -67,7 +68,8 @@ class BitStreamWriter
 public:
 	/**
 	 * Constructs new writer for stream.
-	 * @param stream stl ostream
+	 * @param stream pointer to stl ostream, its caller responsibility 
+	 *        that object is not destroyed while this instance is alive
 	 */
 	explicit BitStreamWriter(std::ostream* stream) {
 		reset(stream);
