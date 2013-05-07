@@ -16,9 +16,11 @@
 #include <string>
 #include <stdexcept>
 
+/**
+ * Interface for writing LZW codes.
+ */
 class LzwCodeWriter
 {
-
 public:
 	virtual ~LzwCodeWriter() {}
 
@@ -42,6 +44,10 @@ public:
 	virtual void writeCode(size_t code) = 0;
 };
 
+/**
+ * Simple LZW code writer. 
+ * Writes codes as text per line to given stream
+ */
 class SimpleCodeWriter : public LzwCodeWriter
 {
 public:
@@ -66,6 +72,12 @@ private:
 	size_t nextCode;
 };
 
+/**
+ * Encoder for LZW algorithm.
+ * Its parametrized with LzwCodeWriter which specifies
+ * how are codes writen.
+ * @see http://marknelson.us/1989/10/01/lzw-data-compression/
+ */
 class LzwEncoder
 {
 public:

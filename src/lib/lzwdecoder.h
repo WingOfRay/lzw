@@ -12,16 +12,32 @@
 #include <iostream>
 #include <map>
 
+/**
+ * Interface for reading LZW codes.
+ */
 class LzwCodeReader
 {
 public:
 	virtual ~LzwCodeReader() { }
 
+	/**
+	 * Obtains next code for storing in LZW dictionary.
+	 * @return next code
+	 */
 	virtual size_t obtainNextCode() = 0;
 
+	/**
+	 * Reads next code.
+	 * @retval code read code
+	 * @return true when read successful otherwise false
+	 */
 	virtual bool readNextCode(size_t& code) = 0;
 };
 
+/**
+ * Simple LZW codes reader.
+ * Codes are expected to be in text representation divided by white space.
+ */
 class SimpleCodeReader : public LzwCodeReader
 {
 public:
@@ -40,6 +56,10 @@ private:
 	size_t nextCode;
 };
 
+/**
+ * Decoder for LZW algorithm.
+ * @see http://marknelson.us/1989/10/01/lzw-data-compression/
+ */
 class LzwDecoder
 {
 public:
