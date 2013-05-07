@@ -8,6 +8,7 @@
 #ifndef LZW_ENCODER_H
 #define LZW_ENCODER_H
 
+#include "lzwcommon.h"
 #include "bitstream.h"
 
 #include <cstdint>
@@ -70,6 +71,29 @@ public:
 private:
 	std::ostream* stream;
 	size_t nextCode;
+};
+
+/**
+ * LZW codes writer.
+ * Variable codes length starting from 9 bits.
+ */
+class VariableCodeWriter : public LzwCodeWriter, protected LzwVariableCoding
+{
+public:
+	explicit VariableCodeWriter(std::ostream* stream) : writer(stream) { }
+	explicit VariableCodeWriter(const BitStreamWriter& writer) : writer(writer) { }
+
+	virtual void flush();
+
+	virtual size_t obtainNextCode() {
+		return nextCode++;
+	}
+
+	virtual void writeCode(size_t code);
+private:
+	static size_t codeBitLength(size_t code);
+
+	BitStreamWriter writer;
 };
 
 /**

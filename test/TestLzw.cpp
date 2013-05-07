@@ -31,3 +31,20 @@ TEST_F(TestLzw, Simple) {
 	auto resultStr = result.str();
 	EXPECT_EQ(simpleTestStr, resultStr);
 }
+
+TEST_F(TestLzw, Variable) {
+	std::ostringstream oss;
+	LzwEncoder encoder(std::make_shared<VariableCodeWriter>(&oss));
+	for (auto c : simpleTestStr) {
+		encoder.encode(c);
+	}
+	encoder.flush();
+
+	std::istringstream iss(oss.str());
+	LzwDecoder decoder(std::make_shared<VariableCodeReader>(&iss));
+	std::ostringstream result;
+	decoder.decode(result);
+
+	auto resultStr = result.str();
+	EXPECT_EQ(simpleTestStr, resultStr);
+}

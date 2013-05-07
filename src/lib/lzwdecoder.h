@@ -8,6 +8,9 @@
 #ifndef LZW_DECODER_H
 #define LZW_DECODER_H
 
+#include "lzwcommon.h"
+#include "bitstream.h"
+
 #include <memory>
 #include <iostream>
 #include <map>
@@ -54,6 +57,25 @@ public:
 private:
 	std::istream* stream;
 	size_t nextCode;
+};
+
+/**
+ * LZW codes reader.
+ * Variable codes length starting from 9 bits.
+ */
+class VariableCodeReader : public LzwCodeReader, protected LzwVariableCoding
+{
+public:
+	explicit VariableCodeReader(const BitStreamReader& reader) : reader(reader) { }
+	explicit VariableCodeReader(std::istream* stream) : reader(stream) { }
+
+	virtual size_t obtainNextCode() {
+		return nextCode++;
+	}
+
+	virtual bool readNextCode(size_t& code);
+private:
+	BitStreamReader reader;
 };
 
 /**

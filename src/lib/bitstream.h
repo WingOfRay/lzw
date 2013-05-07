@@ -11,6 +11,7 @@
 #include <iostream>
 #include <cstdint>
 #include <stdexcept>
+#include <cassert>
 
 /**
  * Reader for individual bits from stl streams.
@@ -52,6 +53,23 @@ public:
 		bool bit = !!(byte & mask);
 		mask >>= 1;
 		return bit;
+	}
+
+	/**
+	 * Reads n bits from stream.
+	 * @param n number of bits that will be read to result.
+	 * @return bits read. Bits are stored here starting from LSB
+	 * @throws std::runtime_error when unable to read from stream
+	 */
+	size_t readBits(size_t n) {
+		assert(n <= sizeof(size_t) * CHAR_BIT);
+
+		size_t result = 0;
+		for (size_t i = 0; i < n; ++i) {
+			if (readBit())
+				result |= 1 << i;
+		}
+		return result;
 	}
 private:
 	std::istream* stream;
@@ -118,6 +136,18 @@ public:
 
 			byte = 0;
 			mask = 0x80;
+		}
+	}
+
+	/**
+	 * Write n bits to stream.
+	 * @param bits buffer with bits to write
+	 * @param n number of bits that will be put to stream, starting from LSB.
+	 * @throws std::runtime_error when failed to write to stream
+	 */
+	void writeBits(size_t bits, size_t n) {
+		for (size_t i = 0; i < n; ++i) {
+			writeBit((bits & (1 << i)) != 0);
 		}
 	}
 private:

@@ -9,6 +9,7 @@ set(MUL13_LIB_HEADERS
 	bitstream.h
 	lzwencoder.h
 	lzwdecoder.h
+	lzwcommon.h
 )
 
 set(MUL13_LIB_SOURCES

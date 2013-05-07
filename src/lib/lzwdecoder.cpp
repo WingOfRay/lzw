@@ -10,6 +10,22 @@
 #include <string>
 #include <stdexcept>
 
+bool VariableCodeReader::readNextCode(size_t& code) {
+	try {
+		code = reader.readBits(curBitLen);
+	} catch (std::exception&) {
+		return false;
+	}
+
+	// if we read mark indicating code length change
+	if (code == CODE_MARK) {
+		curBitLen++;
+		return readNextCode(code);
+	}
+
+	return true;
+}
+
 void LzwDecoder::decode(std::ostream& out) {
 	size_t oldCode;
 	// read first code and output it

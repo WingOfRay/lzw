@@ -9,6 +9,32 @@
 
 #include <limits>
 #include <ios>
+#include <stdexcept>
+
+void VariableCodeWriter::flush() {
+	writer.flush();
+}
+
+void VariableCodeWriter::writeCode(size_t code) {
+	size_t codeLen = codeBitLength(code);
+	if (codeLen > curBitLen) {
+		if (codeLen == curBitLen + 1) {
+			// write mark(all zeros) that we are changing code len
+			writer.writeBits(0, curBitLen);
+			curBitLen = codeLen;
+		} else
+			throw std::runtime_error("VariableCodeWriter::writeCode: code bitlen is larger than current bit len by more than 1");
+	}
+
+	writer.writeBits(code, curBitLen);
+}
+
+size_t VariableCodeWriter::codeBitLength(size_t code) {
+	size_t res = 0;
+	while (code >>= 1)
+		res++;
+	return res;
+}
 
 LzwEncoder::LzwEncoder(std::shared_ptr<LzwCodeWriter> codeWriter) : codeWriter(std::move(codeWriter)) {
 	init();
