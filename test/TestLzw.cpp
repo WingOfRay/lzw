@@ -16,7 +16,7 @@ protected:
 	std::string simpleTestStr;
 
 	static void SetUpTestCase() {
-		for (int i = 0; i < 100000; ++i)
+		for (int i = 0; i < 1000000; ++i)
 			longTestStr += std::string(1, '0' + rand() % 10);
 	}
 
@@ -49,6 +49,27 @@ TEST_F(TestLzw, Simple) {
 
 TEST_F(TestLzw, Variable) {
 	auto resultStr = lzwTest<VariableCodeReader, VariableCodeWriter>(simpleTestStr);
+	EXPECT_EQ(simpleTestStr, resultStr);
+}
+
+TEST_F(TestLzw, VariableDictReset) {
+	std::ostringstream oss;
+	LzwEncoder encoder(std::make_shared<VariableCodeWriter>(&oss));
+	for (size_t i = 0; i < simpleTestStr.size(); i++) {
+		if (i == simpleTestStr.size() / 2)
+			encoder.eraseDictionary();
+
+		encoder.encode(simpleTestStr[i]);
+	}
+
+	encoder.flush();
+
+	std::istringstream iss(oss.str());
+	LzwDecoder decoder(std::make_shared<VariableCodeReader>(&iss));
+	std::ostringstream result;
+	decoder.decode(result);
+
+	auto resultStr = result.str();
 	EXPECT_EQ(simpleTestStr, resultStr);
 }
 

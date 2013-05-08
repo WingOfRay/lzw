@@ -23,47 +23,57 @@
 /**
  * Interface for reading LZW codes.
  */
-class LzwCodeReader : public virtual LzwCodeIOBase
+class ICodeReader : public virtual ILzwIOBase
 {
 public:
-	virtual ~LzwCodeReader() { }
+	virtual ~ICodeReader() { }
 
 	/**
 	 * Reads next code.
 	 * @retval code read code
 	 * @return true when read successful otherwise false
 	 */
-	virtual bool readNextCode(size_t& code) = 0;
+	virtual bool readNextCode(code_type& code) = 0;
+
+	virtual code_type dictResetCode() const = 0;
 };
 
 /**
  * Simple LZW codes reader.
  * Codes are expected to be in text representation divided by white space.
  */
-class SimpleCodeReader : public LzwSimpleCoding, public LzwCodeReader
+class SimpleCodeReader : public LzwSimpleCoding, public ICodeReader
 {
 public:
-	explicit SimpleCodeReader(std::istream* stream) : LzwSimpleCoding(0, (1L << 30L) - 1L), stream(stream) { }
+	explicit SimpleCodeReader(std::istream* stream) : LzwSimpleCoding(1, (1L << 30L) - 1L), stream(stream) { }
 
-	virtual bool readNextCode(size_t& code) {
+	virtual bool readNextCode(code_type& code) {
 		*stream >> code;
 		return !!(*stream);
 	};
+
+	virtual code_type dictResetCode() const {
+		return 0;
+	}
 private:
 	std::istream* stream;
 };
 
 /**
  * LZW codes reader.
- * Variable codes length starting from 9 bits.
+ * Variable codes length starting from 9 bits up to 16 bits.
  */
-class VariableCodeReader : public LzwVariableCoding, public LzwCodeReader
+class VariableCodeReader : public LzwVariableCoding, public ICodeReader
 {
 public:
 	explicit VariableCodeReader(const BitStreamReader& reader) : reader(reader) { }
 	explicit VariableCodeReader(std::istream* stream) : reader(stream) { }
 
-	virtual bool readNextCode(size_t& code);
+	virtual bool readNextCode(code_type& code);
+
+	virtual code_type dictResetCode() const {
+		return CODE_DICT_RESET;
+	}
 private:
 	BitStreamReader reader;
 };
@@ -75,16 +85,18 @@ private:
 class LzwDecoder
 {
 public:
-	explicit LzwDecoder(std::shared_ptr<LzwCodeReader> reader) : codeReader(std::move(reader)) {
-		init();
+	explicit LzwDecoder(std::shared_ptr<ICodeReader> reader) : codeReader(std::move(reader)) {
+		initDictionary();
 	}
 
 	void decode(std::ostream& out);
 private:
-	void init();
+	void initDictionary();
 
-	std::shared_ptr<LzwCodeReader> codeReader;
-	std::map<size_t, std::string> dictionary;
+	void firstRun(size_t& code, std::string& codeStr, char& c);
+
+	std::shared_ptr<ICodeReader> codeReader;
+	std::map<ICodeReader::code_type, std::string> dictionary;
 };
 
 #endif // !LZW_DECODER_H

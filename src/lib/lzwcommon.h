@@ -10,22 +10,33 @@
 
 #include <cstdlib>
 
-class LzwCodeGenerator
+/**
+ * Generator for LZW codes.
+ */
+class ICodeGenerator
 {
 public:
 	typedef size_t code_type;
 
-	virtual ~LzwCodeGenerator() { }
+	virtual ~ICodeGenerator() { }
 
+	/// Gets next LZW code. if haveNext() == false then result is undefined.
 	virtual code_type next() = 0;
 
+	/// True when next() will return valid value, false otherwise
 	virtual bool haveNext() = 0;
+
+	/// Resets generator
+	virtual void reset() = 0;
 };
 
-class SimpleCodeGenerator : public LzwCodeGenerator
+/**
+ * Simple code generator that generates codes in sequence from init to max.
+ */
+class SimpleCodeGenerator : public ICodeGenerator
 {
 public:
-	SimpleCodeGenerator(code_type init, code_type max) : nextCode(init), maxCode(max) { }
+	SimpleCodeGenerator(code_type init, code_type max) : initial(init), nextCode(init), maxCode(max) { }
 
 	virtual code_type next() {
 		if (nextCode >= maxCode)
@@ -36,40 +47,53 @@ public:
 	virtual bool haveNext() {
 		return nextCode < maxCode;
 	}
+
+	virtual void reset() {
+		nextCode = initial;
+	}
 private:
+	code_type initial;
 	code_type nextCode;
 	code_type maxCode;
 };
 
-class LzwCodeIOBase
+/// Base class for readers and writers
+class ILzwIOBase
 {
 public:
-	virtual ~LzwCodeIOBase() { }
+	typedef ICodeGenerator::code_type code_type;
 
-	virtual LzwCodeGenerator* generator() = 0;
+	virtual ~ILzwIOBase() { }
+
+	/// Get LZW codes generator
+	virtual ICodeGenerator* generator() = 0;
 };
 
-class LzwSimpleCoding : public virtual LzwCodeIOBase
+/**
+ * Base class of SimpleCodeReader and VariableCodeReader.
+ */
+class LzwSimpleCoding : public virtual ILzwIOBase
 {
 public:
-	virtual LzwCodeGenerator* generator() {
+	virtual ICodeGenerator* generator() {
 		return &codeGen;
 	}
 protected:
-	LzwSimpleCoding(LzwCodeGenerator::code_type init, LzwCodeGenerator::code_type max) : codeGen(init, max) { }
+	LzwSimpleCoding(ICodeGenerator::code_type init, ICodeGenerator::code_type max) : codeGen(init, max) { }
 
 	SimpleCodeGenerator codeGen;
 };
 
 /**
- * Some common variables and constants for VariableCodeReader and VariableCodeWriter
+ * Base class for VariableCodeReader and VariableCodeWriter.
  */
 class LzwVariableCoding : public LzwSimpleCoding
 {
 protected:
 	static const size_t CODE_MARK = 0;		// code indicating that code length has changed +1
+	static const size_t CODE_DICT_RESET = 1;// code indicating that dictionary has been reseted
 
-	static const int INIT_NEXT_CODE = 1;	// we have 1 predefined code
+	static const int INIT_NEXT_CODE = 2;	// we have 2 predefined code
 	static const int INIT_CODE_LEN = 9;		// cos code 0 is mark we need 9bits for representing byte
 	static const int MAX_CODE_LEN = 16;		// maximum code length
 

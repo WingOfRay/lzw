@@ -15,12 +15,12 @@ void VariableCodeWriter::flush() {
 	writer.flush();
 }
 
-void VariableCodeWriter::writeCode(size_t code) {
-	size_t codeLen = codeBitLength(code);
+void VariableCodeWriter::writeCode(code_type code) {
+	code_type codeLen = codeBitLength(code);
 	if (codeLen > curBitLen) {
 		if (codeLen == curBitLen + 1) {
-			// write mark(all zeros) that we are changing code len
-			writer.writeBits(0, curBitLen);
+			// write mark that we are changing code len
+			writer.writeBits(CODE_MARK, curBitLen);
 			curBitLen = codeLen;
 		} else
 			throw std::runtime_error("VariableCodeWriter::writeCode: code bitlen is larger than current bit len by more than 1");
@@ -29,15 +29,19 @@ void VariableCodeWriter::writeCode(size_t code) {
 	writer.writeBits(code, curBitLen);
 }
 
-size_t VariableCodeWriter::codeBitLength(size_t code) {
+void VariableCodeWriter::writeDictReset() {
+	writeCode(CODE_DICT_RESET);
+}
+
+VariableCodeWriter::code_type VariableCodeWriter::codeBitLength(code_type code) {
 	size_t res = 0;
 	while (code >>= 1)
 		res++;
 	return res + 1;
 }
 
-LzwEncoder::LzwEncoder(std::shared_ptr<LzwCodeWriter> codeWriter) : codeWriter(std::move(codeWriter)) {
-	init();
+LzwEncoder::LzwEncoder(std::shared_ptr<ICodeWriter> codeWriter) : codeWriter(std::move(codeWriter)) {
+	initDictionary();
 }
 
 void LzwEncoder::flush() {
@@ -49,11 +53,11 @@ void LzwEncoder::flush() {
 	codeWriter->flush();
 }
 
-void LzwEncoder::reset(std::shared_ptr<LzwCodeWriter> codeWriter) {
+void LzwEncoder::reset(std::shared_ptr<ICodeWriter> codeWriter) {
 	flush();
 	this->codeWriter = std::move(codeWriter);
 
-	init();
+	initDictionary();
 }
 
 void LzwEncoder::encode(int byte) {
@@ -76,11 +80,22 @@ void LzwEncoder::encode(int byte) {
 	}
 }
 
-void LzwEncoder::init() {
+void LzwEncoder::initDictionary() {
 	// init dictionary with entry for each byte
 	dictionary.clear();
 	for (int b = 0; b <= std::numeric_limits<uint8_t>::max(); b++) {
 		auto key = std::string(1, b);
 		dictionary[key] = codeWriter->generator()->next();
 	}
+}
+
+void LzwEncoder::eraseDictionary() {
+	if (!encodedStr.empty())
+		codeWriter->writeCode(dictionary.at(encodedStr));
+	encodedStr.clear();
+
+	codeWriter->generator()->reset();
+	initDictionary();
+
+	codeWriter->writeDictReset();
 }
