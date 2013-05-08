@@ -60,6 +60,8 @@ private:
 	/// counter that counts how many times in row was interval enlarged from
 	/// middle possible range
 	std::size_t counter;
+
+	bool closed;
 };
 
 #endif // !ARITHMENCODER_H

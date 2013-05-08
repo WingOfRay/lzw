@@ -10,6 +10,7 @@
 
 #include "lzwcommon.h"
 #include "bitstream.h"
+#include "arithmdecoder.h"
 
 #include <memory>
 #include <iostream>
@@ -76,6 +77,28 @@ public:
 	}
 private:
 	BitStreamReader reader;
+};
+
+class ArithmeticCodeReader : public LzwArithmeticCoding, public ICodeReader
+{
+public:
+	explicit ArithmeticCodeReader(std::istream* stream) 
+		: decoder(std::make_shared<ArithmeticDecoder>(std::make_shared<BitStreamReader>(stream))) 
+	{ }
+
+	explicit ArithmeticCodeReader(std::shared_ptr<BitStreamReader> bsr) 
+		: decoder(std::make_shared<ArithmeticDecoder>(std::move(bsr))) 
+	{ }
+
+	explicit ArithmeticCodeReader(std::shared_ptr<ArithmeticDecoder> decoder) : decoder(std::move(decoder)) { }
+
+	virtual bool readNextCode(code_type& code);
+
+	virtual code_type dictResetCode() const {
+		return CODE_DICT_RESET;
+	}
+private:
+	std::shared_ptr<ArithmeticDecoder> decoder;
 };
 
 /**

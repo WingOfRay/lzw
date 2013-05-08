@@ -10,6 +10,7 @@
 
 #include "lzwcommon.h"
 #include "bitstream.h"
+#include "arithmencoder.h"
 
 #include <cstdint>
 #include <memory>
@@ -28,7 +29,7 @@
 class ICodeWriter : public virtual ILzwIOBase
 {
 public:
-	virtual ~ICodeWriter() {}
+	virtual ~ICodeWriter() { }
 
 	/**
 	 * Flushes writer.
@@ -58,6 +59,10 @@ class SimpleCodeWriter : public LzwSimpleCoding, public ICodeWriter
 public:
 	SimpleCodeWriter(std::ostream* stream) : LzwSimpleCoding(1, (1L << 30L) - 1L), stream(stream) { }
 
+	~SimpleCodeWriter() { 
+		flush(); 
+	}
+
 	virtual void flush() {
 		stream->flush();
 	}
@@ -85,6 +90,10 @@ public:
 	explicit VariableCodeWriter(std::ostream* stream) : writer(stream) { }
 	explicit VariableCodeWriter(const BitStreamWriter& writer) : writer(writer) { }
 
+	~VariableCodeWriter() {
+		flush();
+	}
+
 	virtual void flush();
 
 	virtual void writeCode(code_type code);
@@ -94,6 +103,35 @@ private:
 	static code_type codeBitLength(code_type code);
 
 	BitStreamWriter writer;
+};
+
+class ArithmeticCodeWriter : public LzwArithmeticCoding, public ICodeWriter
+{
+public:
+	explicit ArithmeticCodeWriter(std::ostream* stream) : 
+		encoder(std::make_shared<ArithmeticEncoder>(std::make_shared<BitStreamWriter>(stream))) 
+	{ }
+
+	explicit ArithmeticCodeWriter(std::shared_ptr<BitStreamWriter> bsw) : 
+		encoder(std::make_shared<ArithmeticEncoder>(std::move(bsw))) 
+	{ }
+
+	explicit ArithmeticCodeWriter(std::shared_ptr<ArithmeticEncoder> encoder) : encoder(std::move(encoder)) { }
+
+	~ArithmeticCodeWriter() {
+		flush();
+	}
+
+	virtual void flush() {
+		writeCode(CODE_END);
+		encoder->close();
+	}
+
+	virtual void writeCode(code_type code);
+
+	virtual void writeDictReset();
+private:
+	std::shared_ptr<ArithmeticEncoder> encoder;
 };
 
 /**

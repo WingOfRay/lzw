@@ -16,7 +16,7 @@ protected:
 	std::string simpleTestStr;
 
 	static void SetUpTestCase() {
-		for (int i = 0; i < 1000000; ++i)
+		for (int i = 0; i < 100000; ++i)
 			longTestStr += std::string(1, '0' + rand() % 10);
 	}
 
@@ -73,7 +73,17 @@ TEST_F(TestLzw, VariableDictReset) {
 	EXPECT_EQ(simpleTestStr, resultStr);
 }
 
+TEST_F(TestLzw, ArithmeticSimple) {
+	auto resultStr = lzwTest<ArithmeticCodeReader, ArithmeticCodeWriter>(simpleTestStr);
+	EXPECT_EQ(simpleTestStr, resultStr);
+}
+
 TEST_F(TestLzw, VariableLong) {
 	auto resultStr = lzwTest<VariableCodeReader, VariableCodeWriter>(longTestStr);
+	EXPECT_EQ(longTestStr, resultStr);
+}
+
+TEST_F(TestLzw, ArithmeticLong) {
+	auto resultStr = lzwTest<ArithmeticCodeReader, ArithmeticCodeWriter>(longTestStr);
 	EXPECT_EQ(longTestStr, resultStr);
 }

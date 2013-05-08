@@ -40,6 +40,15 @@ VariableCodeWriter::code_type VariableCodeWriter::codeBitLength(code_type code) 
 	return res + 1;
 }
 
+void ArithmeticCodeWriter::writeCode(code_type code) {
+	encoder->encode(code, &dataModel);
+}
+
+void ArithmeticCodeWriter::writeDictReset() {
+	writeCode(CODE_DICT_RESET);
+	dataModel.reset();
+}
+
 LzwEncoder::LzwEncoder(std::shared_ptr<ICodeWriter> codeWriter) : codeWriter(std::move(codeWriter)), encodedIt(dictionary.end()) {
 	initDictionary();
 }
@@ -74,7 +83,7 @@ void LzwEncoder::encode(int byte) {
 	} else {
 		codeWriter->writeCode(encodedIt->second);
 		if (codeWriter->generator()->haveNext())
-			concatenatedIt->second = codeWriter->generator()->next();
+			dictionary[concatenated] = codeWriter->generator()->next();
 
 		encodedIt = dictionary.find(std::string(1, byte));
 	}

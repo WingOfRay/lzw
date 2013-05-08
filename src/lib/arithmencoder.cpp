@@ -8,17 +8,20 @@
 #include "arithmencoder.h"
 
 ArithmeticEncoder::ArithmeticEncoder(std::shared_ptr<BitStreamWriter>& bsw) : bitStreamWriter(bsw), 
-	intervalLow(0), intervalHigh(IntervalTraitsType::MAX), counter(0) { }
+	intervalLow(0), intervalHigh(IntervalTraitsType::MAX), counter(0), closed(false) { }
 
 void ArithmeticEncoder::close() {
-	counter++;
-	if (intervalLow < IntervalTraitsType::QUARTER) {
-		encodeIntervalChange(false);
-	} else {
-		encodeIntervalChange(true);
-	}
+	if (!closed) {
+		counter++;
+		if (intervalLow < IntervalTraitsType::QUARTER) {
+			encodeIntervalChange(false);
+		} else {
+			encodeIntervalChange(true);
+		}
 
-	bitStreamWriter->flush();
+		bitStreamWriter->flush();
+	}
+	closed = true;
 }
 
 void ArithmeticEncoder::reset() {
@@ -27,6 +30,7 @@ void ArithmeticEncoder::reset() {
 	intervalLow = 0;
 	intervalHigh = IntervalTraitsType::MAX;
 	counter = 0;
+	closed = false;
 }
 
 void ArithmeticEncoder::encodeIntervalChange(bool flag) {

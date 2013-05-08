@@ -27,6 +27,21 @@ bool VariableCodeReader::readNextCode(code_type& code) {
 	return true;
 }
 
+bool ArithmeticCodeReader::readNextCode(code_type& code) {
+	try {
+		code = decoder->decode(&dataModel);
+	} catch (std::exception&) {
+		return false;
+	}
+
+	if (code == CODE_DICT_RESET) {
+		dataModel.reset();
+	} else if (code == CODE_END)
+		return false;
+
+	return true;
+}
+
 void LzwDecoder::decode(std::ostream& out) {
 	size_t oldCode;
 	std::string codeStr;

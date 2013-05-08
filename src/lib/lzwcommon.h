@@ -8,6 +8,8 @@
 #ifndef LZW_COMMON_H
 #define LZW_COMMON_H
 
+#include "arithmcodec.h"
+
 #include <cstdlib>
 
 /**
@@ -97,9 +99,26 @@ protected:
 	static const int INIT_CODE_LEN = 9;		// cos code 0 is mark we need 9bits for representing byte
 	static const int MAX_CODE_LEN = 16;		// maximum code length
 
-	LzwVariableCoding() : LzwSimpleCoding(INIT_NEXT_CODE, (1 << MAX_CODE_LEN) - 1), curBitLen(INIT_CODE_LEN) { }
+	LzwVariableCoding() : LzwSimpleCoding(INIT_NEXT_CODE, (1U << MAX_CODE_LEN) - 1), curBitLen(INIT_CODE_LEN) { }
 
 	size_t curBitLen;
+};
+
+class LzwArithmeticCoding : public LzwSimpleCoding
+{
+protected:
+	// arithmetic coding has variable length could be i.e. only 1 bit and doesn't know when it ends.
+	// so we must use some terminating symbol
+	static const size_t CODE_END = 0;
+	static const size_t CODE_DICT_RESET = 1;	// code indicating that dictionary has been reseted
+
+	static const size_t INIT_NEXT_CODE = 2;
+	static const size_t MAX_CODE_LEN = 16;
+	static const size_t MAX_CODE = (1U << MAX_CODE_LEN) - 1;
+
+	LzwArithmeticCoding() : LzwSimpleCoding(INIT_NEXT_CODE, MAX_CODE), dataModel(MAX_CODE + 1) { }
+
+	AdaptiveDataModel dataModel;
 };
 
 #endif // !LZW_COMMON_H
