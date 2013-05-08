@@ -9,6 +9,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <limits>
 
 bool VariableCodeReader::readNextCode(size_t& code) {
 	try {
@@ -37,7 +38,7 @@ void LzwDecoder::decode(std::ostream& out) {
 	if (codeStr.size() != 1)
 		throw std::runtime_error("LzwDecoder::decode: first code doesn't correspond to one byte only!!!");
 	char c = codeStr[0];
-	
+
 	size_t newCode;
 	while (codeReader->readNextCode(newCode)) {
 		auto it = dictionary.find(newCode);
@@ -52,7 +53,8 @@ void LzwDecoder::decode(std::ostream& out) {
 
 		out << codeStr;
 		c = codeStr[0];
-		dictionary[codeReader->obtainNextCode()] = dictionary.at(oldCode) + c;
+		if (codeReader->generator()->haveNext())
+			dictionary[codeReader->generator()->next()] = dictionary.at(oldCode) + c;
 		oldCode = newCode;
 	}
 }
@@ -61,6 +63,6 @@ void LzwDecoder::init() {
 	// init dictionary with entry for each byte
 	dictionary.clear();
 	for (int b = 0; b <= std::numeric_limits<uint8_t>::max(); b++) {
-		dictionary[codeReader->obtainNextCode()] = std::string(1, b);
+		dictionary[codeReader->generator()->next()] = std::string(1, b);
 	}
 }

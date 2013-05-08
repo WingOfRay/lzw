@@ -17,10 +17,15 @@
 #include <string>
 #include <stdexcept>
 
+#ifdef _MSC_VER
+// disable inheriting via dominance warning
+#pragma warning(disable : 4250)
+#endif // _MSC_VER
+
 /**
  * Interface for writing LZW codes.
  */
-class LzwCodeWriter
+class LzwCodeWriter : public virtual LzwCodeIOBase
 {
 public:
 	virtual ~LzwCodeWriter() {}
@@ -30,12 +35,6 @@ public:
 	 * If implementation uses some buffer it flushes it.
 	 */
 	virtual void flush() = 0;
-
-	/**
-	 * Obtains next code for storing in LZW dictionary.
-	 * @return next code
-	 */
-	virtual size_t obtainNextCode() = 0;
 
 	/**
 	 * Writes code to some output stream.
@@ -49,17 +48,13 @@ public:
  * Simple LZW code writer. 
  * Writes codes as text per line to given stream
  */
-class SimpleCodeWriter : public LzwCodeWriter
+class SimpleCodeWriter : public LzwSimpleCoding, public LzwCodeWriter
 {
 public:
-	SimpleCodeWriter(std::ostream* stream) : stream(stream), nextCode(0) { }
+	SimpleCodeWriter(std::ostream* stream) : LzwSimpleCoding(0, (1L << 30L) - 1L), stream(stream) { }
 
 	virtual void flush() {
 		stream->flush();
-	}
-
-	virtual size_t obtainNextCode() {
-		return nextCode++;
 	}
 
 	virtual void writeCode(size_t code) {
@@ -70,24 +65,19 @@ public:
 
 private:
 	std::ostream* stream;
-	size_t nextCode;
 };
 
 /**
  * LZW codes writer.
  * Variable codes length starting from 9 bits.
  */
-class VariableCodeWriter : public LzwCodeWriter, protected LzwVariableCoding
+class VariableCodeWriter : public LzwVariableCoding, public LzwCodeWriter
 {
 public:
 	explicit VariableCodeWriter(std::ostream* stream) : writer(stream) { }
 	explicit VariableCodeWriter(const BitStreamWriter& writer) : writer(writer) { }
 
 	virtual void flush();
-
-	virtual size_t obtainNextCode() {
-		return nextCode++;
-	}
 
 	virtual void writeCode(size_t code);
 private:

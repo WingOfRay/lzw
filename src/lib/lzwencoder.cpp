@@ -33,7 +33,7 @@ size_t VariableCodeWriter::codeBitLength(size_t code) {
 	size_t res = 0;
 	while (code >>= 1)
 		res++;
-	return res;
+	return res + 1;
 }
 
 LzwEncoder::LzwEncoder(std::shared_ptr<LzwCodeWriter> codeWriter) : codeWriter(std::move(codeWriter)) {
@@ -69,8 +69,9 @@ void LzwEncoder::encode(int byte) {
 		encodedStr = concatenated;
 	// concatenated isn't in dictionary
 	} else {
-		dictionary[concatenated] = codeWriter->obtainNextCode();
 		codeWriter->writeCode(dictionary.at(encodedStr));
+		if (codeWriter->generator()->haveNext())
+			dictionary[concatenated] = codeWriter->generator()->next();
 		encodedStr = std::string(1, byte);
 	}
 }
@@ -80,6 +81,6 @@ void LzwEncoder::init() {
 	dictionary.clear();
 	for (int b = 0; b <= std::numeric_limits<uint8_t>::max(); b++) {
 		auto key = std::string(1, b);
-		dictionary[key] = codeWriter->obtainNextCode();
+		dictionary[key] = codeWriter->generator()->next();
 	}
 }

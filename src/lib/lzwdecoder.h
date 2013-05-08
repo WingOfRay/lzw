@@ -15,19 +15,18 @@
 #include <iostream>
 #include <map>
 
+#ifdef _MSC_VER
+// disable inheriting via dominance warning
+#pragma warning(disable : 4250)
+#endif // _MSC_VER
+
 /**
  * Interface for reading LZW codes.
  */
-class LzwCodeReader
+class LzwCodeReader : public virtual LzwCodeIOBase
 {
 public:
 	virtual ~LzwCodeReader() { }
-
-	/**
-	 * Obtains next code for storing in LZW dictionary.
-	 * @return next code
-	 */
-	virtual size_t obtainNextCode() = 0;
 
 	/**
 	 * Reads next code.
@@ -41,14 +40,10 @@ public:
  * Simple LZW codes reader.
  * Codes are expected to be in text representation divided by white space.
  */
-class SimpleCodeReader : public LzwCodeReader
+class SimpleCodeReader : public LzwSimpleCoding, public LzwCodeReader
 {
 public:
-	explicit SimpleCodeReader(std::istream* stream) : stream(stream), nextCode(0) { }
-
-	virtual size_t obtainNextCode() {
-		return nextCode++;
-	};
+	explicit SimpleCodeReader(std::istream* stream) : LzwSimpleCoding(0, (1L << 30L) - 1L), stream(stream) { }
 
 	virtual bool readNextCode(size_t& code) {
 		*stream >> code;
@@ -56,22 +51,17 @@ public:
 	};
 private:
 	std::istream* stream;
-	size_t nextCode;
 };
 
 /**
  * LZW codes reader.
  * Variable codes length starting from 9 bits.
  */
-class VariableCodeReader : public LzwCodeReader, protected LzwVariableCoding
+class VariableCodeReader : public LzwVariableCoding, public LzwCodeReader
 {
 public:
 	explicit VariableCodeReader(const BitStreamReader& reader) : reader(reader) { }
 	explicit VariableCodeReader(std::istream* stream) : reader(stream) { }
-
-	virtual size_t obtainNextCode() {
-		return nextCode++;
-	}
 
 	virtual bool readNextCode(size_t& code);
 private:

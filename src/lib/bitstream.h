@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <cassert>
+#include <climits>
 
 /**
  * Reader for individual bits from stl streams.
