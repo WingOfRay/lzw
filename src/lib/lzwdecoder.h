@@ -13,7 +13,7 @@
 
 #include <memory>
 #include <iostream>
-#include <map>
+#include <unordered_map>
 
 #ifdef _MSC_VER
 // disable inheriting via dominance warning
@@ -96,7 +96,8 @@ private:
 	void firstRun(size_t& code, std::string& codeStr, char& c);
 
 	std::shared_ptr<ICodeReader> codeReader;
-	std::map<ICodeReader::code_type, std::string> dictionary;
+	// LZW codes might be sparse so hash table will be more efficient than tree
+	std::unordered_map<ICodeReader::code_type, std::string> dictionary;
 };
 
 #endif // !LZW_DECODER_H

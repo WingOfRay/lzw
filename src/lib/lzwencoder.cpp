@@ -40,15 +40,14 @@ VariableCodeWriter::code_type VariableCodeWriter::codeBitLength(code_type code) 
 	return res + 1;
 }
 
-LzwEncoder::LzwEncoder(std::shared_ptr<ICodeWriter> codeWriter) : codeWriter(std::move(codeWriter)) {
+LzwEncoder::LzwEncoder(std::shared_ptr<ICodeWriter> codeWriter) : codeWriter(std::move(codeWriter)), encodedIt(dictionary.end()) {
 	initDictionary();
 }
 
 void LzwEncoder::flush() {
-	if (!encodedStr.empty())
-		codeWriter->writeCode(dictionary.at(encodedStr));
-
-	encodedStr.clear();
+	if (encodedIt != dictionary.end())
+		codeWriter->writeCode(encodedIt->second);
+	encodedIt = dictionary.end();
 
 	codeWriter->flush();
 }
@@ -62,21 +61,22 @@ void LzwEncoder::reset(std::shared_ptr<ICodeWriter> codeWriter) {
 
 void LzwEncoder::encode(int byte) {
 	if (byte == std::char_traits<char>::eof()) {
-		codeWriter->writeCode(dictionary.at(encodedStr));
+		codeWriter->writeCode(encodedIt->second);
 		return;
 	}
 
-	auto concatenated = encodedStr + std::string(1, byte);
-	auto it = dictionary.find(concatenated);
+	auto concatenated = (encodedIt == dictionary.end() ? "" : encodedIt->first) + std::string(1, byte);
+	auto concatenatedIt = dictionary.find(concatenated);
 	// concatenated in dictionary
-	if (it != dictionary.end()) {
-		encodedStr = concatenated;
+	if (concatenatedIt != dictionary.end()) {
+		encodedIt = concatenatedIt;
 	// concatenated isn't in dictionary
 	} else {
-		codeWriter->writeCode(dictionary.at(encodedStr));
+		codeWriter->writeCode(encodedIt->second);
 		if (codeWriter->generator()->haveNext())
-			dictionary[concatenated] = codeWriter->generator()->next();
-		encodedStr = std::string(1, byte);
+			concatenatedIt->second = codeWriter->generator()->next();
+
+		encodedIt = dictionary.find(std::string(1, byte));
 	}
 }
 
@@ -90,9 +90,9 @@ void LzwEncoder::initDictionary() {
 }
 
 void LzwEncoder::eraseDictionary() {
-	if (!encodedStr.empty())
-		codeWriter->writeCode(dictionary.at(encodedStr));
-	encodedStr.clear();
+	if (encodedIt != dictionary.end())
+		codeWriter->writeCode(encodedIt->second);
+	encodedIt = dictionary.end();
 
 	codeWriter->generator()->reset();
 	initDictionary();

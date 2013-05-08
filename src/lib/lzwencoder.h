@@ -137,8 +137,11 @@ private:
 
 	std::shared_ptr<ICodeWriter> codeWriter;
 
-	std::map<std::string, ICodeWriter::code_type> dictionary;
-	std::string encodedStr;
+	typedef std::map<std::string, ICodeWriter::code_type> dictionary_type;
+	dictionary_type dictionary;
+	dictionary_type::iterator encodedIt;
+
+	//std::string encodedStr;
 };
 
 #endif // !LZW_ENCODER_H

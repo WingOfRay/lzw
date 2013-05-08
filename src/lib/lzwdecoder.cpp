@@ -49,7 +49,7 @@ void LzwDecoder::decode(std::ostream& out) {
 		auto it = dictionary.find(newCode);
 		// newCode in dictionary
 		if (it != dictionary.end()) {
-			codeStr = dictionary.at(newCode);
+			codeStr = it->second;
 		// newCode NOT in dictionary
 		} else {
 			codeStr = dictionary.at(oldCode);
