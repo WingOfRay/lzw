@@ -27,11 +27,11 @@ void compressData(std::istream& in, std::ostream& out) {
 	size_t bytesRead = 0;
 	double oldRatio = 1.0;
 	int ratioIncreaseCounter = 0;
-	char c;
-	while (in.get(c)) {
+	int c;
+	while ((c = in.get()) != std::char_traits<char>::eof()) {
 		encoder.encode(c);
 
-		bytesWritten = out.tellp() - initSize;
+		/*bytesWritten = out.tellp() - initSize;
 		bytesRead++;
 
 		// erase encoder dictionary if compression ration has increased
@@ -43,7 +43,7 @@ void compressData(std::istream& in, std::ostream& out) {
 		} else
 			ratioIncreaseCounter = 0;
 
-		oldRatio = compressRatio;
+		oldRatio = compressRatio;*/
 	}
 }
 

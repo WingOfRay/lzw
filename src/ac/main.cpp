@@ -49,11 +49,11 @@ void compressStaticly(std::istream& in, std::ostream& out) {
 	out.write(header, 3);
 
 	std::vector<unsigned> freqs(NUM_SYMBOLS);
-	std::vector<char> data;
+	std::vector<unsigned char> data;
 
 	// read in and count frequencies
-	char c;
-	while (in.get(c)) {
+	int c;
+	while ((c = in.get()) != std::char_traits<char>::eof()) {
 		freqs[c]++;
 		data.push_back(c);
 	}
