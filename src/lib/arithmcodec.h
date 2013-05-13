@@ -89,6 +89,11 @@ public:
 
 	explicit AdaptiveDataModel(const std::vector<unsigned>& freqs) : StaticDataModel(freqs) {}
 
+	void appendSymbol(unsigned freq = 1) {
+		auto lastFreq = cumulativeFreqs.empty() ? 0 : cumulativeFreqs.back();
+		cumulativeFreqs.push_back(lastFreq + freq);
+	}
+
 	/**
 	 * Resets data model to initial state, which is all frequencies to 1.
 	 */

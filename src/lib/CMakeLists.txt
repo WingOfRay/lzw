@@ -10,6 +10,7 @@ set(MUL13_LIB_HEADERS
 	lzwencoder.h
 	lzwdecoder.h
 	lzwcommon.h
+	utils.h
 )
 
 set(MUL13_LIB_SOURCES
@@ -18,6 +19,7 @@ set(MUL13_LIB_SOURCES
 	arithmdecoder.cpp
 	lzwencoder.cpp
 	lzwdecoder.cpp
+	utils.cpp
 )
 
 add_library(mul13 ${MUL13_LIB_HEADERS} ${MUL13_LIB_SOURCES})
