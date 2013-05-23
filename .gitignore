@@ -2,3 +2,4 @@ msvcbuild/
 build/
 *~
 test/data/*
+*.zip
